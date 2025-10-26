@@ -1,0 +1,24 @@
+# API keys and secrets
+.env
+*.key
+
+# Generated images
+generated_images/
+AI_Images/
+*.png
+*.jpg
+*.jpeg
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# System files
+.DS_Store
+Thumbs.db
