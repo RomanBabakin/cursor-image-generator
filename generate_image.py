@@ -10,7 +10,6 @@ import sys
 import io
 from datetime import datetime
 from pathlib import Path
-from openai import OpenAI
 import argparse
 
 # Set output encoding
@@ -139,6 +138,7 @@ def generate_image_openai(prompt, api_key, size="1024x1024", quality="standard",
     Returns:
         Path to saved file or None on error
     """
+    from openai import OpenAI
     client = OpenAI(api_key=api_key)
     
     print(f"🎨 Generating image via OpenAI DALL-E...")
@@ -233,9 +233,9 @@ Usage examples:
     parser.add_argument(
         '--provider',
         type=str,
-        default='auto',
+        default='huggingface',
         choices=['auto', 'huggingface', 'openai'],
-        help='Generation provider: auto (try HF first, then OpenAI), huggingface (HF only), openai (DALL-E only). Default: auto'
+        help='Generation provider: auto (try HF first, suggest OpenAI on fail), huggingface (HF only), openai (DALL-E only). Default: huggingface'
     )
     
     parser.add_argument(
@@ -297,11 +297,21 @@ Usage examples:
             if result:
                 sys.exit(0)  # Successfully generated via HF
             
-            # If HF failed and provider='huggingface' - exit with error
+            # HF failed
             if args.provider == 'huggingface':
+                # User explicitly requested HF only - exit with error
                 print("\n❌ Failed to generate via HuggingFace")
                 sys.exit(1)
+            else:
+                # provider='auto' - suggest OpenAI but don't call it automatically
+                print("\n❌ HuggingFace generation failed")
+                print("\n💡 You can try paid OpenAI DALL-E API:")
+                print(f'   python3 generate_image.py "{args.prompt}" --provider openai')
+                print("\n💰 Cost: ~$0.02-0.04 per image (DALL-E 2/3)")
+                print("ℹ️  Requires OPENAI_API_KEY in ~/.cursor/cli-config.json")
+                sys.exit(1)
         else:
+            # No HF token
             if args.provider == 'huggingface':
                 print("❌ HuggingFace token not found!")
                 print("Add HF_TOKEN to ~/.cursor/cli-config.json:")
@@ -309,10 +319,16 @@ Usage examples:
                 print("\nGet token: https://huggingface.co/settings/tokens")
                 sys.exit(1)
             else:
-                print("⚠️  HuggingFace token not found, trying OpenAI...")
+                # provider='auto' but no HF token - suggest OpenAI
+                print("⚠️  HuggingFace token not found")
+                print("\n💡 You can try paid OpenAI DALL-E API:")
+                print(f'   python3 generate_image.py "{args.prompt}" --provider openai')
+                print("\n💰 Cost: ~$0.02-0.04 per image")
+                print("ℹ️  Requires OPENAI_API_KEY in ~/.cursor/cli-config.json")
+                sys.exit(1)
     
-    # If auto or openai - try OpenAI
-    if args.provider == 'auto' or args.provider == 'openai':
+    # Explicit OpenAI request
+    if args.provider == 'openai':
         if not api_keys['openai']:
             print("\n❌ OpenAI API key not found!")
             print("Add OPENAI_API_KEY to ~/.cursor/cli-config.json:")

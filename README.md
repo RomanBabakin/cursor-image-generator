@@ -51,8 +51,9 @@ Tokens are stored in `~/.cursor/cli-config.json`:
 - Cost: $0.00
 
 **Paid (OpenAI):**
-- Requires explicit user confirmation
-- Show: command, provider, model, cost ($0.02-$0.12)
+- Requires explicit `--provider openai` flag
+- NEVER called automatically - user must explicitly approve
+- If HF fails, suggest OpenAI but exit (don't auto-call)
 - Command: `python3 generate_image.py "prompt" --provider openai`
 
 ### Technical Requirements
@@ -121,13 +122,15 @@ AI: "Please specify:
 
 **3. Determine Provider**
 
+- Default: HuggingFace (free, no confirmation needed)
 - If `--provider openai` or "use DALL-E" → requires confirmation
-- Otherwise → HuggingFace without confirmation
+- If `--provider auto` and HF fails → suggest OpenAI but DON'T call it
 
 **4. Generation**
 
 HF: execute immediately
-OpenAI: show details → wait for confirmation → execute
+OpenAI: ONLY if user explicitly requested with `--provider openai`
+Auto mode: try HF → if fails, suggest OpenAI command, exit
 
 ---
 
@@ -147,7 +150,10 @@ python3 generate_image.py "prompt" --provider openai --model dall-e-3 --quality 
 ```
 
 **Parameters:**
-- `--provider`: auto|huggingface|openai (default: auto)
+- `--provider`: auto|huggingface|openai (default: huggingface)
+  - `huggingface`: Use HF only (free)
+  - `openai`: Use OpenAI only (paid, explicit request)
+  - `auto`: Try HF, suggest OpenAI on fail (DON'T auto-call)
 - `--hf-model`: HF model name (default: FLUX.1-schnell)
 - `--model`: dall-e-2|dall-e-3 (default: dall-e-2)
 - `--quality`: standard|hd (DALL-E 3 only)
